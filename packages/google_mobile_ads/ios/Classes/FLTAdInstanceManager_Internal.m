@@ -15,204 +15,269 @@
 #import "FLTAdInstanceManager_Internal.h"
 
 @implementation FLTAdInstanceManager {
-  FLTGoogleMobileAdsCollection<NSNumber *, id<FLTAd>> *_ads;
-  FlutterMethodChannel *_channel;
+    FLTGoogleMobileAdsCollection<NSNumber *, id<FLTAd>> *_ads;
+    FlutterMethodChannel *_channel;
 }
 
 - (instancetype _Nonnull)initWithBinaryMessenger:
-    (id<FlutterBinaryMessenger> _Nonnull)binaryMessenger {
-  self = [super init];
-  if (self) {
-    _ads = [[FLTGoogleMobileAdsCollection alloc] init];
-    NSObject<FlutterMethodCodec> *methodCodec = [FlutterStandardMethodCodec
-        codecWithReaderWriter:[[FLTGoogleMobileAdsReaderWriter alloc] init]];
-    _channel = [[FlutterMethodChannel alloc] initWithName:@"plugins.flutter.io/google_mobile_ads"
-                                          binaryMessenger:binaryMessenger
-                                                    codec:methodCodec];
-  }
-  return self;
+(id<FlutterBinaryMessenger> _Nonnull)binaryMessenger {
+    self = [super init];
+    if (self) {
+        _ads = [[FLTGoogleMobileAdsCollection alloc] init];
+        NSObject<FlutterMethodCodec> *methodCodec = [FlutterStandardMethodCodec
+                                                     codecWithReaderWriter:[[FLTGoogleMobileAdsReaderWriter alloc] init]];
+        _channel = [[FlutterMethodChannel alloc] initWithName:@"plugins.flutter.io/google_mobile_ads"
+                                              binaryMessenger:binaryMessenger
+                                                        codec:methodCodec];
+    }
+    return self;
 }
 
 - (id<FLTAd> _Nullable)adFor:(NSNumber *_Nonnull)adId {
-  return [_ads objectForKey:adId];
+    return [_ads objectForKey:adId];
 }
 
 - (NSNumber *_Nullable)adIdFor:(id<FLTAd> _Nonnull)ad {
-  NSArray<NSNumber *> *keys = [_ads allKeysForObject:ad];
-
-  if (keys.count > 1) {
-    NSLog(@"%@Error: Multiple keys for a single ad.",
-          NSStringFromClass([FLTAdInstanceManager class]));
-  }
-
-  if (keys.count > 0) {
-    return keys[0];
-  }
-
-  return nil;
+    @try {
+        NSArray<NSNumber *> *keys = [_ads allKeysForObject:ad];
+        if (keys.count > 1) {
+            NSLog(@"%@Error: Multiple keys for a single ad.",
+                  NSStringFromClass([FLTAdInstanceManager class]));
+        }
+        if (keys.count > 0) {
+            NSNumber *result = keys[0];
+            return result;
+        }
+    } @catch (NSException *exception) {
+        NSLog(@"adIdFor %@", exception.reason);
+    }
+    @finally {
+  
+    }
+    
+    
+    return nil;
 }
 
 - (void)loadAd:(id<FLTAd> _Nonnull)ad adId:(NSNumber *_Nonnull)adId {
-  [_ads setObject:ad forKey:adId];
-  ad.manager = self;
-  [ad load];
+    [_ads setObject:ad forKey:adId];
+    ad.manager = self;
+    [ad load];
 }
 
 - (void)dispose:(NSNumber *_Nonnull)adId {
-  [_ads removeObjectForKey:adId];
+    [_ads removeObjectForKey:adId];
 }
 
 - (void)disposeAllAds {
-  [_ads removeAllObjects];
+    [_ads removeAllObjects];
 }
 
 - (void)showAdWithID:(NSNumber *_Nonnull)adId {
-  id<FLTAdWithoutView> ad = (id<FLTAdWithoutView>)[self adFor:adId];
-
-  if (!ad) {
-    NSLog(@"Can't find ad with id: %@", adId);
-    return;
-  }
-
-  [ad show];
+    id<FLTAdWithoutView> ad = (id<FLTAdWithoutView>)[self adFor:adId];
+    
+    if (!ad) {
+        NSLog(@"Can't find ad with id: %@", adId);
+        return;
+    }
+    
+    [ad show];
 }
 
 - (void)onAdLoaded:(id<FLTAd> _Nonnull)ad responseInfo:(GADResponseInfo *_Nonnull)responseInfo {
-  [_channel invokeMethod:@"onAdEvent"
-               arguments:@{
-                 @"adId" : [self adIdFor:ad],
-                 @"eventName" : @"onAdLoaded",
-                 @"responseInfo" : [[FLTGADResponseInfo alloc] initWithResponseInfo:responseInfo]
-               }];
+    @try {
+        NSNumber *adId = [self adIdFor:ad];
+        [_channel invokeMethod:@"onAdEvent"
+                     arguments:@{
+                         @"adId" : adId,
+                         @"eventName" : @"onAdLoaded",
+                         @"responseInfo" : [[FLTGADResponseInfo alloc] initWithResponseInfo:responseInfo]
+                     }];
+    }
+    @catch (NSException *exception) {
+        NSLog(@"onAdLoaded %@", exception.reason);
+    }
+    @finally {
+        
+    }
+    
 }
 
 - (void)onAdFailedToLoad:(id<FLTAd> _Nonnull)ad error:(NSError *_Nonnull)error {
-  [_channel invokeMethod:@"onAdEvent"
-               arguments:@{
-                 @"adId" : [self adIdFor:ad],
-                 @"eventName" : @"onAdFailedToLoad",
-                 @"loadAdError" : [[FLTLoadAdError alloc] initWithError:error]
-               }];
+    @try {
+        [_channel invokeMethod:@"onAdEvent"
+                     arguments:@{
+                         @"adId" : [self adIdFor:ad],
+                         @"eventName" : @"onAdFailedToLoad",
+                         @"loadAdError" : [[FLTLoadAdError alloc] initWithError:error]
+                     }];
+    }
+    @catch (NSException *exception) {
+        NSLog(@"onAdFailedToLoad %@", exception.reason);
+    }
+    @finally {
+        
+    }
+    
 }
 
 - (void)onAppEvent:(id<FLTAd> _Nonnull)ad name:(NSString *)name data:(NSString *)data {
-  [_channel invokeMethod:@"onAdEvent"
-               arguments:@{
-                 @"adId" : [self adIdFor:ad],
-                 @"eventName" : @"onAppEvent",
-                 @"name" : name,
-                 @"data" : data
-               }];
+    @try {
+        [_channel invokeMethod:@"onAdEvent"
+                     arguments:@{
+                         @"adId" : [self adIdFor:ad],
+                         @"eventName" : @"onAppEvent",
+                         @"name" : name,
+                         @"data" : data
+                     }];
+    }
+    @catch (NSException *exception) {
+        NSLog(@"onAppEvent %@ %@", name, exception.reason);
+    }
+    @finally {
+        
+    }
+    
 }
 
 - (void)onNativeAdClicked:(FLTNativeAd *_Nonnull)ad {
-  [self sendAdEvent:@"onNativeAdClicked" ad:ad];
+    [self sendAdEvent:@"onNativeAdClicked" ad:ad];
 }
 
 - (void)onNativeAdImpression:(FLTNativeAd *_Nonnull)ad {
-  [self sendAdEvent:@"onNativeAdImpression" ad:ad];
+    [self sendAdEvent:@"onNativeAdImpression" ad:ad];
 }
 
 - (void)onNativeAdWillPresentScreen:(FLTNativeAd *_Nonnull)ad {
-  [self sendAdEvent:@"onNativeAdWillPresentScreen" ad:ad];
+    [self sendAdEvent:@"onNativeAdWillPresentScreen" ad:ad];
 }
 
 - (void)onNativeAdDidDismissScreen:(FLTNativeAd *_Nonnull)ad {
-  [self sendAdEvent:@"onNativeAdDidDismissScreen" ad:ad];
+    [self sendAdEvent:@"onNativeAdDidDismissScreen" ad:ad];
 }
 
 - (void)onNativeAdWillDismissScreen:(FLTNativeAd *_Nonnull)ad {
-  [self sendAdEvent:@"onNativeAdWillDismissScreen" ad:ad];
+    [self sendAdEvent:@"onNativeAdWillDismissScreen" ad:ad];
 }
 
 - (void)onRewardedAdUserEarnedReward:(FLTRewardedAd *_Nonnull)ad
                               reward:(FLTRewardItem *_Nonnull)reward {
-  [_channel invokeMethod:@"onAdEvent"
-               arguments:@{
-                 @"adId" : [self adIdFor:ad],
-                 @"eventName" : @"onRewardedAdUserEarnedReward",
-                 @"rewardItem" : reward,
-               }];
+    @try {
+        [_channel invokeMethod:@"onAdEvent"
+                     arguments:@{
+                         @"adId" : [self adIdFor:ad],
+                         @"eventName" : @"onRewardedAdUserEarnedReward",
+                         @"rewardItem" : reward,
+                     }];
+    }
+    @catch (NSException *exception) {
+        NSLog(@"onRewardedAdUserEarnedReward %@", exception.reason);
+    }
+    @finally {
+        
+    }
+    
 }
 
 - (void)onBannerImpression:(FLTBannerAd *_Nonnull)ad {
-  [self sendAdEvent:@"onBannerImpression" ad:ad];
+    [self sendAdEvent:@"onBannerImpression" ad:ad];
 }
 
 - (void)onBannerWillDismissScreen:(FLTBannerAd *)ad {
-  [self sendAdEvent:@"onBannerWillDismissScreen" ad:ad];
+    [self sendAdEvent:@"onBannerWillDismissScreen" ad:ad];
 }
 
 - (void)onBannerDidDismissScreen:(FLTBannerAd *)ad {
-  [self sendAdEvent:@"onBannerDidDismissScreen" ad:ad];
+    [self sendAdEvent:@"onBannerDidDismissScreen" ad:ad];
 }
 
 - (void)onBannerWillPresentScreen:(FLTBannerAd *_Nonnull)ad {
-  [self sendAdEvent:@"onBannerWillPresentScreen" ad:ad];
+    [self sendAdEvent:@"onBannerWillPresentScreen" ad:ad];
 }
 
 - (void)onAdDidPresentFullScreenContent:(id<FLTAd> _Nonnull)ad {
-  [self sendAdEvent:@"onAdDidPresentFullScreenContent" ad:ad];
+    [self sendAdEvent:@"onAdDidPresentFullScreenContent" ad:ad];
 }
 
 - (void)adDidDismissFullScreenContent:(id<FLTAd> _Nonnull)ad {
-  [self sendAdEvent:@"adDidDismissFullScreenContent" ad:ad];
+    [self sendAdEvent:@"adDidDismissFullScreenContent" ad:ad];
 }
 
 - (void)adWillDismissFullScreenContent:(id<FLTAd> _Nonnull)ad {
-  [self sendAdEvent:@"adWillDismissFullScreenContent" ad:ad];
+    [self sendAdEvent:@"adWillDismissFullScreenContent" ad:ad];
 }
 
 - (void)adDidRecordImpression:(id<FLTAd> _Nonnull)ad {
-  [self sendAdEvent:@"adDidRecordImpression" ad:ad];
+    [self sendAdEvent:@"adDidRecordImpression" ad:ad];
 }
 
 - (void)didFailToPresentFullScreenContentWithError:(id<FLTAd> _Nonnull)ad
                                              error:(NSError *_Nonnull)error {
-  [_channel invokeMethod:@"onAdEvent"
-               arguments:@{
-                 @"adId" : [self adIdFor:ad],
-                 @"eventName" : @"didFailToPresentFullScreenContentWithError",
-                 @"error" : error
-               }];
+    @try {
+        [_channel invokeMethod:@"onAdEvent"
+                     arguments:@{
+                         @"adId" : [self adIdFor:ad],
+                         @"eventName" : @"didFailToPresentFullScreenContentWithError",
+                         @"error" : error
+                     }];
+    }
+    @catch (NSException *exception) {
+        NSLog(@"didFailToPresentFullScreenContentWithError %@", exception.reason);
+    }
+    @finally {
+        
+    }
+    
 }
 
 /// Sends an ad event with the provided name.
 - (void)sendAdEvent:(NSString *_Nonnull)eventName ad:(id<FLTAd>)ad {
-  [_channel invokeMethod:@"onAdEvent"
-               arguments:@{
-                 @"adId" : [self adIdFor:ad],
-                 @"eventName" : eventName,
-               }];
+    if (!ad) {
+        NSLog(@"sendAdEvent null ad");
+        return;
+    }
+    @try {
+        [_channel invokeMethod:@"onAdEvent"
+                     arguments:@{
+                         @"adId" : [self adIdFor:ad],
+                         @"eventName" : eventName,
+                     }];
+    }
+    @catch (NSException *exception) {
+        NSLog(@"sendAdEvent %@ %@", eventName, exception.reason);
+    }
+    @finally {
+        
+    }
 }
 
 @end
 
 @implementation FLTNewGoogleMobileAdsViewFactory
 - (instancetype)initWithManager:(FLTAdInstanceManager *_Nonnull)manager {
-  self = [super init];
-  if (self) {
-    _manager = manager;
-  }
-  return self;
+    self = [super init];
+    if (self) {
+        _manager = manager;
+    }
+    return self;
 }
 
 - (nonnull NSObject<FlutterPlatformView> *)createWithFrame:(CGRect)frame
                                             viewIdentifier:(int64_t)viewId
                                                  arguments:(id _Nullable)args {
-  NSNumber *adId = args;
-  NSObject<FlutterPlatformView> *view = (NSObject<FlutterPlatformView> *)[_manager adFor:adId];
-
-  if (!view) {
-    NSString *reason = [NSString
-        stringWithFormat:@"Could not find an ad with id: %@. Was this ad already disposed?", adId];
-    @throw [NSException exceptionWithName:NSInvalidArgumentException reason:reason userInfo:nil];
-  }
-
-  return view;
+    NSNumber *adId = args;
+    NSObject<FlutterPlatformView> *view = (NSObject<FlutterPlatformView> *)[_manager adFor:adId];
+    
+    if (!view) {
+        NSString *reason = [NSString
+                            stringWithFormat:@"Could not find an ad with id: %@. Was this ad already disposed?", adId];
+        @throw [NSException exceptionWithName:NSInvalidArgumentException reason:reason userInfo:nil];
+    }
+    
+    return view;
 }
 
 - (NSObject<FlutterMessageCodec> *)createArgsCodec {
-  return [FlutterStandardMessageCodec sharedInstance];
+    return [FlutterStandardMessageCodec sharedInstance];
 }
 @end
